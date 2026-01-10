@@ -2,10 +2,10 @@ use std::net::{TcpListener};
 use log::{debug, info, error};
 use std::{io::{Write}};
 
-use crate::{request::HTTPRequest, response};
+use crate::{request::{self, HTTPRequest}, response};
 use crate::response::HTTPResponse;
 
-type HTTPFunc = fn(HTTPRequest) -> HTTPResponse;
+type HTTPFunc = fn(&HTTPRequest) -> HTTPResponse;
 
 #[derive(Debug)]
 struct Endpoint {
@@ -17,19 +17,27 @@ struct Endpoint {
 
 #[derive(Debug)]
 pub struct HTTPServer {
+    host: String,
+    port: i32,
     endpoints: Vec<Endpoint>
 }
 
 impl HTTPServer{
 
-    pub fn new() -> Self{
+    pub fn new(
+        host: &str, port: i32
+    ) -> Self{
         HTTPServer {
-            endpoints: Vec::new()
+            host: host.to_string(), port: port, endpoints: Vec::new()
         }
     }
 
-    fn is_allowed_path(&self, path: &str) -> bool {
-        self.endpoints.iter().any(|e| {e.path == path.to_string()})
+    fn is_allowed_request(&self, e: &Endpoint, request: &HTTPRequest) -> bool {
+
+        if e.path == request.path && request.method == e.method {
+                return true;
+        }
+        return false
     }
 
     pub fn get(&mut self, path: &str, func: HTTPFunc){
@@ -39,31 +47,30 @@ impl HTTPServer{
         );
     }
 
-    pub fn bind(
-        self, host: &str, port: i32
-    ){
+    pub fn start(self){
+        
         let listener = TcpListener::bind(
-            format!("{}:{}", host, port)
+            format!("{}:{}", self.host, self.port)
         ).unwrap();
         
         for stream in listener.incoming() {
             match stream {
                 Ok(mut stream) => {
                     info!("accepted new connection");
+                    
+                    let request = HTTPRequest::parse(&mut stream);
+                    
+                    let mut response = HTTPResponse::new(404, "Not Found");
 
                     for endpoint in &self.endpoints {
 
-                        let request = HTTPRequest::parse(&mut stream);
-
-                        let mut response = HTTPResponse::new(404, "Not Found");
-
-                        if self.is_allowed_path(&request.path) {
-                            response = (endpoint.func)(request);
+                        if self.is_allowed_request(endpoint, &request){
+                            response = (endpoint.func)(&request);
+                            break;
                         }
-                        
-                        let _ = stream.write(&response.as_bytes());
-                        stream.flush();
                     }
+                    let _ = stream.write(&response.as_bytes());
+                    stream.flush();
                 }
                 Err(e) => {
                     error!("error: {}", e);
