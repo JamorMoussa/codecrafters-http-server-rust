@@ -8,7 +8,7 @@ const CRLF: &str = "\r\n";
 struct Headers {
     headers: HashMap<String, String>
 }
-`
+
 struct HTTPResponse {
     status_code: i32,
     reason: String,
