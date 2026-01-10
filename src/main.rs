@@ -8,7 +8,7 @@ const CRLF: &str = "\r\n";
 struct Headers {
     headers: HashMap<String, String>
 }
-
+`
 struct HTTPResponse {
     status_code: i32,
     reason: String,
@@ -104,6 +104,7 @@ fn main() {
                 let response = HTTPResponse::new(status_code, reason);
                 
                 let _ = stream.write(&response.as_bytes());
+                stream.flush();
             }
             Err(e) => {
                 error!("error: {}", e);
