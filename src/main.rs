@@ -1,7 +1,8 @@
-use std::{collections::HashMap, io::{Read, Write}};
+use std::{collections::HashMap, io::{BufRead, Read, Write}};
 #[allow(unused_imports)]
 use std::net::{TcpListener, TcpStream};
 use log::{debug, error, info};
+use std::io::BufReader;
 
 const CRLF: &str = "\r\n";
 
@@ -52,18 +53,17 @@ impl HTTPRequest {
 
     fn parse(stream: &mut TcpStream) -> Self{
 
-        let mut buf = String::new();
+        let mut reader = BufReader::new(stream);
 
-        let _ = stream.read_to_string(&mut buf);
+        let mut request_line = String::new();
 
-        let request = buf.split(CRLF).collect::<Vec<&str>>();
+        reader.read_line(&mut request_line).unwrap();
 
-        // request line 
-        let request_line = request[0].split_whitespace().collect::<Vec<&str>>();
+        let parts: Vec<&str>= request_line.trim_end().split_whitespace().collect();
 
-        let method = request_line[0].to_string();
-        let path = request_line[1].to_string();
-        let http_version = request_line[2].to_string();
+        let method = parts[0].to_string();
+        let path = parts[1].to_string();
+        let http_version = parts[2].to_string();
 
         HTTPRequest {
             method: method,
@@ -96,7 +96,7 @@ fn main() {
 
                 debug!("{}",request.path);
 
-                if request.path != "/index.html" {
+                if request.path != "/index.html" && request.path != "/" {
                     (status_code, reason) = (404, "Not Found");
                     error!("Not Found");
                 }
