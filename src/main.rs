@@ -5,6 +5,7 @@ mod server;
 mod request;
 mod response;
 
+use log::debug;
 use server::HTTPServer;
 use crate::response::HTTPResponse;
 
@@ -15,20 +16,13 @@ fn main() {
     let mut http_server = HTTPServer::new("127.0.0.1", 4221);
 
     http_server.get(
-        "/index.html", 
+        "/echo/abc", 
         |_request| {
-            HTTPResponse::new(200, "Ok")
-        }
-    );
 
-    http_server.get(
-        "/", 
-        |_request| {
-            HTTPResponse::new(200, "Ok")
+            let content = _request.params.clone().unwrap();
+            HTTPResponse::new(&content, "text/plain",200, "Ok")
         }
     );
     
     http_server.start();
-
-
 }

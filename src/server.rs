@@ -42,6 +42,8 @@ impl HTTPServer{
 
     pub fn get(&mut self, path: &str, func: HTTPFunc){
 
+        let (path, _) = path.rsplit_once("/").unwrap();
+
         self.endpoints.push(
             Endpoint { method: "GET".to_string(), path: path.to_string(), func: func}
         );
@@ -60,7 +62,7 @@ impl HTTPServer{
                     
                     let request = HTTPRequest::parse(&mut stream);
                     
-                    let mut response = HTTPResponse::new(404, "Not Found");
+                    let mut response = HTTPResponse::new("", "text/plain", 404, "Not Found");
 
                     for endpoint in &self.endpoints {
 
