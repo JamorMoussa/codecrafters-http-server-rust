@@ -20,7 +20,7 @@ fn main() {
         |_request| {
 
             let content = _request.params.clone().unwrap();
-            HTTPResponse::new(&content, "text/plain",200, "Ok")
+            HTTPResponse::new(&content, "text/plain",200, "OK")
         }
     );
     
